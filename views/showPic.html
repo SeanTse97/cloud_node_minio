@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>图片首页</title>
+    <!-- 新 Bootstrap 核心 CSS 文件 -->
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <!-- jQuery文件。务必在bootstrap.min.js 之前引入 -->
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="//at.alicdn.com/t/font_1520849_llnkk5uv6h.css">
+</head>
+<style>
+    body{
+        background: rgb(231, 228, 228);
+    }
+    h3{
+        font: .8em Arial, Tahoma, Verdana;
+        color: rgb(14, 12, 12);
+        font-size: 20px;
+        padding-left: 5%;
+        display: inline;
+        padding-top: 10px;
+    }
+    .top a{
+        font-size: 18px;
+        padding-left: 70%;
+        padding-top: 10px;
+    }
+    .overlay{
+         background-color:#000; 
+         opacity: 1.0; 
+         filter:alpha(opacity=100); 
+         position: fixed;
+         top:0;
+         left:0;
+         width:100%;
+         height:100%;
+         z-index: 10;
+         overflow:auto; 
+         cursor: pointer;
+        
+     }
+     .overlayimg{
+         position: absolute;
+         z-index: 11;
+         width:99%; 
+         height:auto;
+     }
+     img{
+        cursor: pointer;
+        display: block;
+        width: 100%;
+        height: 200px;
+     }
+    .list li{
+        float: left;
+        list-style-type:none;
+        width:27%;
+        background-color: rgb(252, 252, 252);
+        margin: 10px;
+        height: 265px;
+        margin-left: 25px; 
+        cursor: pointer;
+
+     }
+     .list li a{
+         margin-left: 75%;
+     }
+     .btn2{
+         margin-left: 40%;
+     }
+     .icon{
+        margin-left: 8%;  
+     }
+    .nav li{
+        margin-left: 10px;
+     } 
+     .con{
+         margin-top: 5%;
+     }
+</style>
+<body>
+    <!-- <div class="top"><a href="/share">快来分享你的生活吧</a></div> -->
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand">极简图床</a>
+        </div>
+        <div>
+            <ul class="nav navbar-nav">
+                <li class="active"><a>图片广场</a></li>
+                <li><a >我的相册</a></li>
+                <li><a href="/share">我要分享</a></li>
+                <li class="dropdown user">
+                    <a class="dropdown-toggle" data-toggle="dropdown" id="user">   
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/loginOut">退出登陆</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        </div>
+    </nav>  
+    <div class="container con">
+    
+        <div class="row" >
+            <ul class="list" id="pic">
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+<script>
+    var len =0;
+    $(document).ready(function(){
+        $.ajax({
+            url: "/getObject",
+            dataType: "JSON",
+            success: function (res) {
+                $('#user').append(res.user).append("   <b class=\"caret\"></b>");
+                render(res);
+                addExpand();
+            },
+            error:function(err){
+                console.log(err);
+            }
+            
+        })
+    })
+    function render(res){
+        var data = res.data;
+        $("#pic").empty();
+        var imgs = "";
+        for(var i=0;i<data.length;i++){
+            var username = data[i].split('/')[5].split('-')[0];
+            imgs += "<li><img src=\""+data[i]+"\" alt=\"图片\"/>"+
+            "<br><i class=\"iconfont icon icon-touxiang\" >  "+username+"</i>"+
+            "<input type=button onclick=\"window.location.href='"+data[i]+"'\" value=\"下载\" class=\"btn btn-default btn2\"></li>";
+        }
+        $("#pic").append(imgs);
+    }
+
+    function addExpand() {
+                var imgs = document.getElementsByTagName("img");
+                //imgs[0].focus();
+                for(var i = 0;i<imgs.length;i++){
+                    imgs[i].onclick = expandPhoto;
+                    imgs[i].onkeydown = expandPhoto;
+                }
+     }
+     function expandPhoto(){
+                var overlay = document.createElement("div");
+                overlay.setAttribute("id","overlay");
+                overlay.setAttribute("class","overlay");
+                document.body.appendChild(overlay);
+ 
+                var img = document.createElement("img");
+                img.setAttribute("id","expand")
+                img.setAttribute("class","overlayimg");
+                img.src = this.getAttribute("src");
+                document.getElementById("overlay").appendChild(img);
+ 
+                img.onclick = restore;
+            }
+    function restore(){
+        document.body.removeChild(document.getElementById("overlay"));
+    }
+    $("li").click(function (e) {
+     $(this).addClass('active').siblings().removeClass('active');
+     var index = $(this).index() + 1;
+     if(index == 1){
+        $.ajax({
+            url: "/getObject",
+            dataType: "JSON",
+            success: function (res) {
+                render(res);
+                addExpand();
+            },
+            error:function(err){
+                console.log(err);
+            }
+            
+        })
+     }
+     if(index == 2){
+        $("#pic").empty();
+        $.ajax({
+            url: "/getPersonalObject",
+            dataType: "JSON",
+            success: function (res) {
+                console.log("---->"+res.data.length);
+                render(res);
+                addExpand();
+            },
+            error:function(err){
+                console.log(err);
+            }
+            
+        })
+       
+     }
+    })
+
+</script>

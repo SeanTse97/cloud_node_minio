@@ -89,6 +89,10 @@ app.post('/upload/image/private', upload.single('file'), (req, res) => {
 app.get('/share',function(req,res){
     user.goToShare(req,res);
 })
+//申请同步
+app.post('/reqSync',function(req,res){
+   user.reqSync(req,res);
+})
 //退出登陆
 app.get('/loginOut',function(req,res){
   res.cookie('uname', "", { maxAge: 900000, httpOnly: true });

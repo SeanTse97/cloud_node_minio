@@ -9,6 +9,8 @@
     <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
     <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="//at.alicdn.com/t/font_1520849_llnkk5uv6h.css">
+    <!-- 滚动加载js -->
+    <script type="text/javascript" src="http://www.zhangxinxu.com/study/js/mini/jquery.scrollLoading-min.js"></script> 
 </head>
 <style>
     body{
@@ -96,6 +98,7 @@
                     <a class="dropdown-toggle" data-toggle="dropdown" id="user">   
                     </a>
                     <ul class="dropdown-menu">
+                        <li><a  data-toggle="modal" data-target="#myModal">申请相册同步</a></li>
                         <li><a href="/loginOut">退出登陆</a></li>
                     </ul>
                 </li>
@@ -103,19 +106,57 @@
         </div>
         </div>
     </nav>  
-    <div class="container con">
+    <div class="container con" id="mycontain">
     
         <div class="row" >
             <ul class="list" id="pic">
             </ul>
+        </div>
+        <div class="row">
+            <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" 
+                                    aria-hidden="true">×
+                            </button>
+                            <h4 class="modal-title" id="myModalLabel">
+                                同步设备信息：
+                            </h4>
+                        </div>
+                        <div class="modal-body">
+                            <form role="form">
+                                <div class="form-group">
+                                  <label for="name">设备ID</label>
+                                  <input type="text" class="form-control" id="id" placeholder="请输入设备ID">
+                                </div>
+                                <div class="form-group">
+                                    <label for="name">设备名称</label>
+                                    <input type="text" class="form-control" id="name" placeholder="请输入设备名称">
+                                </div>
+                                </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" 
+                                    data-dismiss="modal">关闭
+                            </button>
+                            <button type="button" class="btn btn-primary" id="sync">
+                                提交更改
+                            </button>
+                        </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+            </div><!-- /.modal -->            
+
         </div>
     </div>
 </body>
 </html>
 <script>
     var len =0;
+    var request;
     $(document).ready(function(){
-        $.ajax({
+       request = $.ajax({
             url: "/getObject",
             dataType: "JSON",
             success: function (res) {
@@ -129,14 +170,15 @@
             
         })
     })
-    function render(res){
+    function render(res){console.log
         var data = res.data;
         $("#pic").empty();
         var imgs = "";
+        if(data.length == 0) imgs = "<h3>空空如也！</h3>"
         for(var i=0;i<data.length;i++){
-            var username = data[i].split('/')[5].split('-')[0];
+            var username = data[i].split('/')[6].split('-')[0];
             imgs += "<li><img src=\""+data[i]+"\" alt=\"图片\"/>"+
-            "<br><i class=\"iconfont icon icon-touxiang\" >  "+username+"</i>"+
+            "<br><i class=\"iconfont icon icon-touxiang\">  "+username+"</i>"+
             "<input type=button onclick=\"window.location.href='"+data[i]+"'\" value=\"下载\" class=\"btn btn-default btn2\"></li>";
         }
         $("#pic").append(imgs);
@@ -171,7 +213,11 @@
      $(this).addClass('active').siblings().removeClass('active');
      var index = $(this).index() + 1;
      if(index == 1){
-        $.ajax({
+        if(request != null){
+            console.log("上一线程未完成");
+            request.abort();
+        }
+        request = $.ajax({
             url: "/getObject",
             dataType: "JSON",
             success: function (res) {
@@ -179,22 +225,27 @@
                 addExpand();
             },
             error:function(err){
+                console.log("上线程一出错");
                 console.log(err);
             }
             
         })
      }
      if(index == 2){
-        $("#pic").empty();
-        $.ajax({
+        if(request != null){
+            console.log("上一线程未完成");
+            request.abort();
+        }
+       
+        request = $.ajax({
             url: "/getPersonalObject",
             dataType: "JSON",
             success: function (res) {
-                console.log("---->"+res.data.length);
                 render(res);
                 addExpand();
             },
             error:function(err){
+                console.log("上线程二出错");
                 console.log(err);
             }
             
@@ -202,5 +253,21 @@
        
      }
     })
+$("#sync").click(function(){
+    $.ajax({
+        type:"POST",
+        url:'/reqSync',
+        data:{devId:$("#id").val(),devName:$("#name").val()},
+        dataType:'JSON',
+        success:function(res){
+            alert(res.msg);
+            $('#myModal').modal('hide');
+        },
+        error:function(err){
+            alert("申请失败！");
+        }
+    })
+    
 
+})
 </script>

@@ -11,7 +11,8 @@ let name = new Array();
 let picUrl = new Array();
 
 var minioClient = new Minio.Client({
-    endPoint: '111.229.43.122',
+    //endPoint: '111.229.43.122',
+    endPoint:'192.168.159.129',
     port: 9000,
     useSSL: false,
     accessKey: '02K29ZK9I6RTJXV6321S',
@@ -28,6 +29,17 @@ let select = (table,name,attributename, attribute) => {
       })
     })
   }
+//插入数据
+let insert = (userName,devId,devName) => {
+  return new Promise((resolve, reject) => {
+    db.query(`insert into record values('${userName}','${devId}','${devName}','F')`, (err, rows) => {
+      if(err) {
+        reject(err);
+      }
+      resolve(rows);
+    })
+  })
+}
 //创建bucket
 function createBucket(bucketName){
   minioClient.makeBucket(bucketName, 'us-east-1', function(err) {
@@ -37,7 +49,7 @@ function createBucket(bucketName){
 }
 //获取对象
 function getObjects(bucketName,callback){
-  var stream = minioClient.listObjectsV2(bucketName,'', true,'');
+  var stream = minioClient.listObjectsV2(bucketName,'/images', true,'');
   stream.on('data', function(obj) {
       name.push(obj.name);
   })
@@ -200,23 +212,20 @@ async function getPersonal(req,res){
       console.log(e);
     }
 }
-// //获取图片
-// function getImages(req,res){
-//   var options = {
-//     root: pages + 'images//',
-//     dotfiles: 'deny',
-//     headers: {
-//         'x-timestamp': Date.now(),
-//         'x-sent': true
-//     }
-//   };
-//   res.sendFile(req.path.split('/')[2], options, function (err) {
-//     if (err) {
-//       console.log(err);
-//     }
-//   });
-// }
-
+//请求同步设备
+async function reqSync(req,res){
+    var uname = req.cookies.uname;
+    var devId = req.body.devId;
+    var devName = req.body.devName;
+    try{
+      result = await insert(uname,devId,devName);
+      res.send({msg:"申请成功,请耐心等候！"});
+    }catch(e){
+      console.log(e);
+      res.send({msg:"申请失败"});
+    }
+    
+}
 module.exports = {
-	showIndex,getObject,goToShare,uploadFile,login,showLogin,getPersonal
+	showIndex,getObject,goToShare,uploadFile,login,showLogin,getPersonal,reqSync
 }

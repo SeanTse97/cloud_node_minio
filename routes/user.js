@@ -5,14 +5,13 @@ var Fs = require('fs');
 var db = require('./db');
 var pages = path.join(__dirname,'../');
 var Minio = require('minio');
-var async = require('async');
 
 let name = new Array();
 let picUrl = new Array();
 
 var minioClient = new Minio.Client({
     //endPoint: '111.229.43.122',
-    endPoint:'192.168.159.129',
+    endPoint:'192.168.159.132',
     port: 9000,
     useSSL: false,
     accessKey: '02K29ZK9I6RTJXV6321S',
@@ -48,8 +47,8 @@ function createBucket(bucketName){
   })
 }
 //获取对象
-function getObjects(bucketName,callback){
-  var stream = minioClient.listObjectsV2(bucketName,'/images', true,'');
+function getObjects(bucketName,prefix,callback){
+  var stream = minioClient.listObjectsV2(bucketName,prefix, true,'');
   stream.on('data', function(obj) {
       name.push(obj.name);
   })
@@ -73,9 +72,9 @@ function getObjectsUrl(bucketName){
   name.length = 0;
 }
 //promise 写法
-let getObj = (bucketName)=>{
+let getObj = (bucketName,prefix)=>{
   return new Promise((resolve, reject) => {
-    getObjects(bucketName, err => {
+    getObjects(bucketName, prefix, err => {
       if(err) {
         reject(err);
       }
@@ -195,7 +194,7 @@ function goToShare(req,res){
 async function getObject(req,res){
   res.header("Content-Type", "application/json;charset=utf-8");
   try{
-    await getObj('public');
+    await getObj('public','/images');
     res.send({data:picUrl,user:req.cookies.uname});
   }catch(e){
     console.log(e);
@@ -204,9 +203,10 @@ async function getObject(req,res){
 
 async function getPersonal(req,res){
     res.header("Content-Type", "application/json;charset=utf-8");
-    var uname = req.cookies.uname; 
+    var uname = req.cookies.uname;
+    var temp = new Array(); 
     try{
-      await getObj(uname);
+      await getObj(uname,'/images/');
       res.send({data:picUrl});
     }catch(e){
       console.log(e);
